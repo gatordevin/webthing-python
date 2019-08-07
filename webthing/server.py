@@ -1,4 +1,5 @@
 """Python Web Thing server implementation."""
+import asyncio
 
 from zeroconf import ServiceInfo, Zeroconf
 import json
@@ -63,15 +64,11 @@ class MultipleThings:
 
         idx -- the index
         """
-        try:
-            idx = int(idx)
-        except ValueError:
-            return None
+        for thing in self.things:
+            if thing.get_title() == idx:
+                return thing
 
-        if idx < 0 or idx >= len(self.things):
-            return None
-
-        return self.things[idx]
+        return None
 
     def get_things(self):
         """Get the list of things."""
@@ -157,7 +154,6 @@ class ThingsHandler(BaseHandler):
             }
             description['security'] = 'nosec_sc'
             descriptions.append(description)
-
         self.write(json.dumps(descriptions))
 
 
@@ -358,6 +354,42 @@ class PropertiesHandler(BaseHandler):
 
         self.set_header('Content-Type', 'application/json')
         self.write(json.dumps(thing.get_properties()))
+    def put(self, thing_id='0', property_name=None):
+        """
+        Handle a PUT request.
+
+        thing_id -- ID of the thing this request is for
+        property_name -- the name of the property from the URL path
+        """
+
+        thing = self.get_thing(thing_id)
+        if thing is None:
+            self.set_status(404)
+            return
+
+        try:
+            args = json.loads(self.request.body.decode())
+        except ValueError:
+            self.set_status(400)
+            return
+
+        if property_name not in args:
+            self.set_status(400)
+            return
+
+        if thing.has_property(property_name):
+            try:
+                thing.set_property(property_name, args[property_name])
+            except PropertyError:
+                self.set_status(400)
+                return
+
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps({
+                property_name: thing.get_property(property_name),
+            }))
+        else:
+            self.set_status(404)
 
 
 class PropertyHandler(BaseHandler):
@@ -390,6 +422,7 @@ class PropertyHandler(BaseHandler):
         thing_id -- ID of the thing this request is for
         property_name -- the name of the property from the URL path
         """
+
         thing = self.get_thing(thing_id)
         if thing is None:
             self.set_status(404)
@@ -636,20 +669,6 @@ class WebThingServer:
 
     def __init__(self, things, port=80, hostname=None, ssl_options=None,
                  additional_routes=None, base_path=''):
-        """
-        Initialize the WebThingServer.
-
-        For documentation on the additional route format, see:
-        https://www.tornadoweb.org/en/stable/web.html#tornado.web.Application
-
-        things -- things managed by this server -- should be of type
-                  SingleThing or MultipleThings
-        port -- port to listen on (defaults to 80)
-        hostname -- Optional host name, i.e. mything.com
-        ssl_options -- dict of SSL options to pass to the tornado server
-        additional_routes -- list of additional routes to add to the server
-        base_path -- base URL path to use, rather than '/'
-        """
         self.things = things
         self.name = things.get_name()
         self.port = port
@@ -678,8 +697,8 @@ class WebThingServer:
             ])
 
         if isinstance(self.things, MultipleThings):
-            for idx, thing in enumerate(self.things.get_things()):
-                thing.set_href_prefix('{}/{}'.format(self.base_path, idx))
+            for thing in self.things.get_things():
+                thing.set_href_prefix('{}/{}'.format(self.base_path, thing.get_title()))
 
             handlers = [
                 [
@@ -688,49 +707,50 @@ class WebThingServer:
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/?',
+                    r'/(?P<thing_id>[^/]+)/?',
                     ThingHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/properties/?',
+                    r'/(?P<thing_id>[^/]+)/properties/?',
                     PropertiesHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/properties/' +
+                    r'/(?P<thing_id>[^/]+)/properties/' +
                     r'(?P<property_name>[^/]+)/?',
                     PropertyHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/actions/?',
+                    r'/(?P<thing_id>[^/]+)/actions/?',
                     ActionsHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/actions/(?P<action_name>[^/]+)/?',
+                    r'/(?P<thing_id>[^/]+)/actions/(?P<action_name>[^/]+)/?',
                     ActionHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/actions/' +
+                    r'/(?P<thing_id>[^/]+)/actions/' +
                     r'(?P<action_name>[^/]+)/(?P<action_id>[^/]+)/?',
                     ActionIDHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/events/?',
+                    r'/(?P<thing_id>[^/]+)/events/?',
                     EventsHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
                 [
-                    r'/(?P<thing_id>\d+)/events/(?P<event_name>[^/]+)/?',
+                    r'/(?P<thing_id>[^/]+)/events/(?P<event_name>[^/]+)/?',
                     EventHandler,
                     dict(things=self.things, hosts=self.hosts),
                 ],
             ]
         else:
+            print("invalid things")
             self.things.get_thing().set_href_prefix(self.base_path)
             handlers = [
                 [
@@ -789,6 +809,7 @@ class WebThingServer:
 
     def start(self):
         """Start listening for incoming connections."""
+        asyncio.set_event_loop(asyncio.new_event_loop())
         self.service_info = ServiceInfo(
             '_webthing._tcp.local.',
             '{}._webthing._tcp.local.'.format(self.name),
