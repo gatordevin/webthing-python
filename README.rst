@@ -1,4 +1,6 @@
-Implementation of an HTTP `Web Thing <https://iot.mozilla.org/wot/>`_. This library is compatible with Python 3.4+. This code is a fork of the main webthing-python branch https://github.com/mozilla-iot/webthing-python
+Implementation of an HTTP `Web Thing <https://iot.mozilla.org/wot/>`_. This library is compatible with Python 3.4+. This code is a fork of the main webthing-python branch https://github.com/mozilla-iot/webthing-python.
+
+This fork is designed to connect to a socket client and recieve commands. Was designed for the specific use case of creating virtual IoT devices from Unity and having the webthing-python code dynamicially start and stop the server as devices are added.
 
 Installation
 ============
