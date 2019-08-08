@@ -27,14 +27,16 @@ The server is listening for a few specefic command strings.
 
 ``Start``
 
-Upon recieving Start as a string over the socket it will then wait for a JSON string to be sent by the client immediatly after.
+Upon receiving Start as a string over the socket it will then wait for a JSON string to be sent by the client immediatly after.
 JSON Structrure is as follows:
-{
-  "UnityLight": ["LightOne", "LightTwo"...,"LightHundred"], 
-  "UnityButton": ["ButtonOne", "ButtonTwo"...,"ButtonHundred"]
-}
+{"UnityLight": ["LightOne", "LightTwo"...,"LightHundred"], "UnityButton": ["ButtonOne", "ButtonTwo"...,"ButtonHundred"]}
+
+Once it receives this JSON string it will decode it determine how many of each device you want and the name of each and then start the IoT Device Server with all of these devices. They will then be avaiable upon search from the Mozilla Gateway.
 
 ``Data``
 
+Upon recieving Data as a string over the socket it will then create a JSON string to be sent to the client that has all the device names as keys, with another JSON object as their value which contains all the property names and values fro the object.
+
 ``Stop``
 
+Upon recieving Stop as a string over the socket it will shut down the server. Currently the Unity code sends this when the game is stopped this prepares the python code for new devices and possibly a new Unity client.
