@@ -1,5 +1,5 @@
 import socket
-from example import ServerClasses
+import ServerClasses
 import json
 s = socket.socket()
 
