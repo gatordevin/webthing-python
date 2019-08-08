@@ -1,4 +1,6 @@
 import threading
+import sys
+sys.path.append('../')
 from webthing import (MultipleThings, Property, Thing, Value, WebThingServer)
 import logging
 logging.getLogger('tornado.access').disabled = True
