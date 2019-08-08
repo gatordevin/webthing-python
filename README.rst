@@ -9,15 +9,15 @@ Installation
 
 .. code:: shell
 
-  $ git commit https://github.com/gatordevin/webthing-python.git
+  $ git clone https://github.com/gatordevin/webthing-python.git
 
 Running the Sample
 ==================
 
 .. code:: shell
 
-  $ cd webthing-python
-  $ python3 single-thing.py
+  $ cd webthing-python/example
+  $ python3 UnityProxy.py
 
 This starts a server and lets you search for it from your gateway through mDNS. To add it to your gateway, navigate to the Things page in the gateway's UI and click the + icon at the bottom right. If both are on the same network, the example thing will automatically appear.
 
