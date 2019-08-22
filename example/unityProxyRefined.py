@@ -10,19 +10,17 @@ class ClientHandler(Thread):
         Thread.__init__(self)
         self.conn = conn
         self.port = port
+        print("Thread started with " + str(self.port))
 
     def run(self):
         while True:
-            try:
-                ready_to_read, ready_to_write, in_error = select.select([self.conn,], [self.conn,], [], 5)
-            except select.error:
-                print("Uh")
-                self.conn.shutdown(2)
-                self.conn.close()
+            data = self.conn.recv(1024)
+            if not data:
+                print('Thread Closing')
                 sys.exit()
-            if(len(ready_to_read) > 0):
-                data = self.conn.recv(1024)
-                #print(str(self.port) + " says: " + data.decode("utf-8"))
+                break
+            data = data.decode("utf-8")
+            print(str(self.port) + " says " + data)
 
 class ClientListener(Thread):
     def __init__(self):
@@ -34,7 +32,7 @@ class ClientListener(Thread):
         while True:
             self.s.listen(5)
             (c, (ip,port)) = self.s.accept()
-            ClientHandlerClass = ClientHandler(c,ip)
+            ClientHandlerClass = ClientHandler(c,port)
             ClientHandlerClass.start()
 
 ClientListenerClass = ClientListener()
