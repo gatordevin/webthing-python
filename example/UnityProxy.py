@@ -21,13 +21,13 @@ class MagicLeapHandler(Thread):
             server = ServerClasses.Server()
             print("Connection With:", self.ip)
             c.sendall(str.encode("waiting"))
-            data = c.recv(100)
-            data = data.decode("utf-8")
-            print(data)
-            jsonData = json.loads(data)
-            for property, value in jsonData.items():
-                if(property == "Color"):
-                    self.team = value
+            #data = c.recv(100)
+            #data = data.decode("utf-8")
+            #print(data)
+            #jsonData = json.loads(data)
+            #for property, value in jsonData.items():
+            #    if(property == "Color"):
+            #        self.team = value
             while True:
                 data = c.recv(1024)
                 if not data:

@@ -2,14 +2,25 @@ import socket
 import select
 from threading import Thread
 import sys
-HOST = '127.0.0.1'
-PORT = 2000
+import tornado.ioloop
+import tornado.web
+import json
+import ServerClasses
 
+clients = []
+IoTdevices = []
+DeviceList = []
+started = False
+server = ServerClasses.Server()
+### SOCKET HANDLER CLASSES
 class ClientHandler(Thread):
+    global IoTdevices
     def __init__(self,conn,port):
         Thread.__init__(self)
         self.conn = conn
         self.port = port
+        self.clientDevice = []
+        clients.append(str(self.port))
         print("Thread started with " + str(self.port))
 
     def run(self):
@@ -17,13 +28,24 @@ class ClientHandler(Thread):
             data = self.conn.recv(1024)
             if not data:
                 print('Thread Closing')
+                clients.remove(str(self.port))
                 sys.exit()
-                break
             data = data.decode("utf-8")
-            print(str(self.port) + " says " + data)
+            jsonData = json.loads(data)
+
+
+            for deviceType, devices in jsonData.items():
+                for device in devices:
+                    self.clientDevice.append(device)
+                    if not device in IoTdevices:
+                        IoTdevices.append(device)
+                    try:
+                        DeviceList.append(getattr(ServerClasses, deviceType)(device))
+                    except NameError:
+                        pass
 
 class ClientListener(Thread):
-    def __init__(self):
+    def __init__(self, HOST, PORT):
         Thread.__init__(self)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((HOST, PORT))
@@ -35,7 +57,48 @@ class ClientListener(Thread):
             ClientHandlerClass = ClientHandler(c,port)
             ClientHandlerClass.start()
 
-ClientListenerClass = ClientListener()
-ClientListenerClass.start()
-while True:
-    pass
+
+
+### TORNADO HANDLER CLASSES WEBPAGE
+class MainHandler(tornado.web.RequestHandler):
+    global clients
+    global IoTdevices
+    def get(self):
+        self.render("template.html", title="Proxy Interface", clients=clients, IoTDevices=IoTdevices )
+
+class StopServerHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        global started
+        global server
+        if started :
+            server.stop()
+            started = False
+
+class StartServerHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        global started
+        global server
+        if not started:
+            server.start(DeviceList)
+            started = True
+
+def make_app():
+    return tornado.web.Application([
+            (r"/", MainHandler),
+            (r"/stopIoT", StopServerHandler),
+            (r"/startIoT", StartServerHandler)
+        ])
+
+
+
+### MAIN CODE
+if __name__ == "__main__":
+    HOST = '127.0.0.1'
+    PORT = 2000
+    ClientListenerClass = ClientListener(HOST, PORT)
+    ClientListenerClass.start()
+    app = make_app()
+    app.listen(8888)
+    tornado.ioloop.IOLoop.current().start()

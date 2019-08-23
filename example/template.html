@@ -1,0 +1,37 @@
+<html>
+   <head>
+      <title>{{ title }}</title>
+   </head>
+   <body>
+     <button id="btn" type="button">Start IoT Server</button>
+      <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+      <script>
+          $("#btn").click(function () {
+              $.ajax({
+                  type: 'GET',
+                  url: "/startIoT"
+              });
+          });
+      </script>
+      <button id="btn2" type="button">Stop IoT Server</button>
+       <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+       <script>
+           $("#btn2").click(function () {
+               $.ajax({
+                   type: 'GET',
+                   url: "/stopIoT"
+               });
+           });
+       </script>
+     <ul>
+       {% for client in clients %}
+         <li>{{ escape(client) }}</li>
+       {% end %}
+     </ul>
+     <ul>
+       {% for IoTDevice in IoTDevices %}
+         <li>{{ escape(IoTDevice) }}</li>
+       {% end %}
+     </ul>
+   </body>
+  </html>
