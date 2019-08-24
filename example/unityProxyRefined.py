@@ -11,7 +11,7 @@ clients = []
 IoTdevices = []
 DeviceList = []
 started = False
-server = ServerClasses.Server()
+
 ### SOCKET HANDLER CLASSES
 class ClientHandler(Thread):
     global IoTdevices
@@ -69,20 +69,12 @@ class MainHandler(tornado.web.RequestHandler):
 class StopServerHandler(tornado.web.RequestHandler):
 
     def get(self):
-        global started
-        global server
-        if started :
-            server.stop()
-            started = False
+        serverStarter(False)
 
 class StartServerHandler(tornado.web.RequestHandler):
 
     def get(self):
-        global started
-        global server
-        if not started:
-            server.start(DeviceList)
-            started = True
+        serverStarter(True)
 
 def make_app():
     return tornado.web.Application([
@@ -90,6 +82,18 @@ def make_app():
             (r"/stopIoT", StopServerHandler),
             (r"/startIoT", StartServerHandler)
         ])
+def serverStarter(start):
+    global started
+    global DeviceList
+    if(start):
+        if not started:
+            print(DeviceList)
+            server.start(DeviceList)
+            started = True
+    else:
+        if started:
+            server.stop()
+            started = False
 
 
 
@@ -100,5 +104,6 @@ if __name__ == "__main__":
     ClientListenerClass = ClientListener(HOST, PORT)
     ClientListenerClass.start()
     app = make_app()
-    app.listen(8888)
+    app.listen(8000)
+    server = ServerClasses.Server()
     tornado.ioloop.IOLoop.current().start()
