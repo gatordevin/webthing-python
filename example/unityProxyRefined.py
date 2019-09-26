@@ -24,6 +24,24 @@ class ClientHandler(Thread):
         print("Thread started with " + str(self.port))
 
     def run(self):
+        data = self.conn.recv(1024)
+        if not data:
+            print('Thread Closing')
+            clients.remove(str(self.port))
+            sys.exit()
+        data = data.decode("utf-8")
+        jsonData = json.loads(data)
+        print(jsonData)
+        for deviceType, devices in jsonData.items():
+            for device in devices:
+                self.clientDevice.append(device)
+                if not device in IoTdevices:
+                    IoTdevices.append(device)
+                    try:
+                        DeviceList.append(getattr(ServerClasses, deviceType)(device))
+                    except NameError:
+                        pass
+        self.conn.sendall(b"recv")
         while True:
             data = self.conn.recv(1024)
             if not data:
@@ -31,24 +49,39 @@ class ClientHandler(Thread):
                 clients.remove(str(self.port))
                 sys.exit()
             data = data.decode("utf-8")
-            jsonData = json.loads(data)
+            #print(data)
+            if(data == "get"):
+                dataSend = {}
+                for device in self.clientDevice:
+                    IoTdevice = DeviceList[IoTdevices.index(device)]
+                    dataSend[IoTdevice.get_name()] = IoTdevice.get_properties()
+                    json_data = json.dumps(dataSend)
+                self.conn.sendall(str.encode(json_data))
+            elif(data == "Stop"):
+                print('Thread Closing')
+                clients.remove(str(self.port))
+                sys.exit()
+            else:
+                self.conn.sendall(str.encode("ready"))
+                data = self.conn.recv(1024)
+                data = data.decode("utf-8")
+                jsonData = json.loads(data)
+                for deviceName, properties in jsonData.items():
+                    IoTdevice = DeviceList[IoTdevices.index(deviceName)]
+                    for propertyName, propertyValue in properties.items():
+                        IoTdevice.set_property(propertyName, propertyValue)
+                self.conn.sendall(b"recv")
 
 
-            for deviceType, devices in jsonData.items():
-                for device in devices:
-                    self.clientDevice.append(device)
-                    if not device in IoTdevices:
-                        IoTdevices.append(device)
-                    try:
-                        DeviceList.append(getattr(ServerClasses, deviceType)(device))
-                    except NameError:
-                        pass
 
 class ClientListener(Thread):
     def __init__(self, HOST, PORT):
         Thread.__init__(self)
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind((HOST, PORT))
+        #self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.s.bind((HOST, PORT))
+        self.s = socket.socket()
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.s.bind(('', PORT))
 
     def run(self):
         while True:
