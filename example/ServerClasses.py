@@ -61,6 +61,86 @@ class UnityButton(Thing):
                          'description': 'Whether the lamp is turned on',
                      }))
 
+class QuestionThing(Thing):
+    def get_name(self):
+        return self.name
+    def __init__(self, name):
+        self.name = name
+        Thing.__init__(self, 'urn:dev:ops:question-thing-'+name, name, ['OnOffSwitch'],'A web button')
+
+        self.add_property(
+            Property(self,
+                     'question',
+                     Value("Current Question"),
+                     metadata={
+                         'title': 'question',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'answer1',
+                     Value("Answer Choice One"),
+                     metadata={
+                         'title': 'answer1',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'answer2',
+                     Value("Answer Choice Two"),
+                     metadata={
+                         'title': 'answer2',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'answer3',
+                     Value("Answer Choice Three"),
+                     metadata={
+                         'title': 'answer3',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'answer4',
+                     Value("Answer Choice Four"),
+                     metadata={
+                         'title': 'answer4',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'correctcount',
+                     Value(0),
+                     metadata={
+                         'title': 'correctcount',
+                         'type': 'int',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'chosenanswer',
+                     Value("None"),
+                     metadata={
+                         'title': 'chosenanswer',
+                         'type': 'string',
+                         'description': 'String test',
+                     }))
+        self.add_property(
+            Property(self,
+                     'newquestion',
+                     Value(False),
+                     metadata={
+                         'title': 'newquestion',
+                         'type': 'boolean',
+                         'description': 'String test',
+                     }))
+
 
 class Server():
     def __init__(self):
